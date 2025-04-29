@@ -1,31 +1,10 @@
-// Banco de dados de rimas (simplificado)
-const rimas = {
-  "flor": ["amor", "cor", "dor", "splendor"],
-  "mar": ["azar", "lugar", "voar", "sonhar"],
-  "lua": ["sua", "escuta", "bruxa", "nua"]
-};
+// Configurações do JSONBin
+const JSONBIN_BIN_ID = "SEU_BIN_ID"; // Substitua pelo seu Bin ID
+const JSONBIN_API_KEY = "SUA_API_KEY"; // Substitua pela sua API Key
+const JSONBIN_URL = `https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest`;
 
-// Sugere rimas baseadas na última palavra do poema
-function sugerirRima() {
-  const poema = document.getElementById('poema').value;
-  const palavras = poema.split(' ');
-  const ultimaPalavra = palavras[palavras.length - 1].toLowerCase().replace(/[.,!?]/g, '');
-  
-  const sugestaoDiv = document.getElementById('sugestao-rima');
-  sugestaoDiv.classList.remove('hidden');
-
-  if (rimas[ultimaPalavra]) {
-    sugestaoDiv.innerHTML = `
-      <p class="font-bold text-purple-800">Rimas para "${ultimaPalavra}":</p>
-      <p>${rimas[ultimaPalavra].join(', ')}</p>
-    `;
-  } else {
-    sugestaoDiv.innerHTML = `<p>Nenhuma rima encontrada para "${ultimaPalavra}". Tente outra palavra!</p>`;
-  }
-}
-
-// Salva o poema no localStorage
-function salvarPoema() {
+// Salva todos os poemas no JSONBin
+async function salvarPoema() {
   const tema = document.getElementById('tema').value;
   const poema = document.getElementById('poema').value;
 
@@ -34,36 +13,80 @@ function salvarPoema() {
     return;
   }
 
-  const poemasSalvos = JSON.parse(localStorage.getItem('poemas') || '[]');
-  poemasSalvos.push({ tema, poema });
-  localStorage.setItem('poemas', JSON.stringify(poemasSalvos));
+  // Pega a lista atual de poemas
+  const poemasAtuais = await carregarPoemasDoServidor();
+  const novosPoemas = [...poemasAtuais, { tema, poema }];
 
-  alert("Poema salvo com sucesso!");
-  carregarPoemas();
-  document.getElementById('poema').value = '';
+  // Envia para o JSONBin
+  try {
+    const response = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Master-Key": JSONBIN_API_KEY,
+      },
+      body: JSON.stringify(novosPoemas),
+    });
+
+    if (response.ok) {
+      alert("Poema salvo no servidor!");
+      carregarPoemas();
+      document.getElementById('poema').value = "";
+    } else {
+      throw new Error("Falha ao salvar");
+    }
+  } catch (error) {
+    console.error("Erro:", error);
+    alert("Erro ao salvar. Tente novamente.");
+  }
 }
 
-// Carrega poemas salvos
-function carregarPoemas() {
-  const poemasSalvos = JSON.parse(localStorage.getItem('poemas') || '[]');
+// Carrega poemas do JSONBin
+async function carregarPoemasDoServidor() {
+  try {
+    const response = await fetch(JSONBIN_URL, {
+      headers: { "X-Master-Key": JSONBIN_API_KEY },
+    });
+    const data = await response.json();
+    return data.record || []; // Retorna a lista de poemas ou vazio
+  } catch (error) {
+    console.error("Erro ao carregar:", error);
+    return [];
+  }
+}
+
+// Atualiza a lista de poemas na tela
+async function carregarPoemas() {
+  const poemas = await carregarPoemasDoServidor();
   const listaDiv = document.getElementById('lista-poemas');
 
-  listaDiv.innerHTML = poemasSalvos.map((item, index) => `
+  listaDiv.innerHTML = poemas.map((item, index) => `
     <div class="bg-white p-4 rounded-lg shadow-md border border-purple-200">
-      <h3 class="font-bold text-purple-700">${item.tema || 'Sem tema'}</h3>
-      <p class="poema-text mt-2 text-gray-800">${item.poema.replace(/\n/g, '<br>')}</p>
-      <button onclick="deletarPoema(${index})" class="mt-2 text-red-500 hover:text-red-700">Deletar</button>
+      <h3 class="font-bold text-purple-700">${item.tema || "Sem tema"}</h3>
+      <p class="poema-text mt-2 text-gray-800">${item.poema.replace(/\n/g, "<br>")}</p>
+      <button onclick="deletarPoema(${index})" class="mt-2 text-red-500 hover:text-red-700">
+        Deletar
+      </button>
     </div>
-  `).join('');
+  `).join("");
 }
 
-// Deleta um poema
-function deletarPoema(index) {
-  const poemasSalvos = JSON.parse(localStorage.getItem('poemas') || '[]');
-  poemasSalvos.splice(index, 1);
-  localStorage.setItem('poemas', JSON.stringify(poemasSalvos));
+// Deleta um poema (atualiza o JSONBin)
+async function deletarPoema(index) {
+  const poemas = await carregarPoemasDoServidor();
+  poemas.splice(index, 1);
+
+  await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Master-Key": JSONBIN_API_KEY,
+    },
+    body: JSON.stringify(poemas),
+  });
+
   carregarPoemas();
 }
 
-// Carrega poemas ao iniciar
-document.addEventListener('DOMContentLoaded', carregarPoemas);
+// Carrega os poemas ao iniciar
+document.addEventListener("DOMContentLoaded", carregarPoemas);
