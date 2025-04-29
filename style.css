@@ -1,0 +1,7 @@
+@import url('https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap');
+
+/* Estilo personalizado para textos poéticos */
+.poema-text {
+  font-family: 'Patrick Hand', cursive;
+  line-height: 1.8;
+}
