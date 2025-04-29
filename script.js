@@ -1,6 +1,6 @@
 // Configurações do JSONBin
-const JSONBIN_BIN_ID = "SEU_BIN_ID"; // Substitua pelo seu Bin ID
-const JSONBIN_API_KEY = "SUA_API_KEY"; // Substitua pela sua API Key
+const JSONBIN_BIN_ID = "681122fe8561e97a500a46b6"; // Substitua pelo seu Bin ID
+const JSONBIN_API_KEY = "$2a$10$QOElX.D6IN9twdhooyqs6O3pjTQGpmYUE8h2RHS3jZNPFcryFTopG"; // Substitua pela sua API Key
 const JSONBIN_URL = `https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest`;
 
 // Salva todos os poemas no JSONBin
